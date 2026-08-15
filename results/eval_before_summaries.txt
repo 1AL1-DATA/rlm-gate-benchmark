@@ -1,0 +1,63 @@
+=== tier 0.30 ===
+*   debug is disabled
+*   skip the changelog
+*   slot 2
+*   temperature stayed flat
+*   no packet loss
+*   AURORA
+
+=== tier 0.60 ===
+- AURORA
+- 8082
+
+=== tier 0.90 ===
+- AURORA
+- 8082
+- q8
+
+=== tier 0.30 ===
+- config loader
+- timer
+- slot 2
+- debug is disabled
+- release notes short
+- skip the changelog for now
+- offload is CPU
+
+=== tier 0.60 ===
+- CPU
+- 250K
+- ninety
+
+=== tier 0.90 ===
+- config loader
+- timer
+- slot 2
+- debug
+- changelog
+- CPU
+- 250K
+- ninety
+- RLM
+
+=== tier 0.30 ===
+- slot 2
+- debug is disabled
+- 64K
+
+=== tier 0.60 ===
+- slot 2
+- debug is disabled
+- 64K
+- FIFO
+
+=== tier 0.90 ===
+- slot 2
+- 64K
+- FIFO
+- 8GB
+
+=== tier 0.30 ===
+* QWEN
+* 2
+

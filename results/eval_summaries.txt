@@ -1,0 +1,56 @@
+=== tier 0.30 ===
+* AURORA
+
+=== tier 0.60 ===
+- AURORA
+- 8082
+
+=== tier 0.90 ===
+- AURORA
+- 8082
+- q8
+
+=== tier 0.30 ===
+* slot 2
+* CPU
+
+=== tier 0.60 ===
+- slot 2
+- debug is disabled
+- offload is CPU
+- context is 250K
+- gate is ninety
+
+=== tier 0.90 ===
+- config loader
+- timer
+- slot 2
+- debug is disabled
+- release notes short
+- skip the changelog for now
+- the offload is CPU
+- the context is 250K
+- the gate is ninety
+- the memory is RLM
+
+=== tier 0.30 ===
+- slot 2
+- debug is disabled
+- 64K
+
+=== tier 0.60 ===
+- slot 2
+- debug is disabled
+- 64K
+- FIFO
+
+=== tier 0.90 ===
+- slot 2
+- 64K
+- FIFO
+- 8GB
+
+=== tier 0.30 ===
+* QWEN
+* 2
+

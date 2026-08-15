@@ -1,0 +1,61 @@
+cff-version: 1.2.0
+message: |
+  If you use this work in a research paper, blog post, or product, please cite it
+  as below. The BibTeX entry below is the canonical citation.
+type: software
+title: "RLM rolling-window benchmark: a drift-aware context gate for long-running LLM conversations"
+version: 0.1.0
+date-released: 2026-08-15
+license:
+  - id: MIT
+    url: "https://opensource.org/licenses/MIT"
+    title: "MIT License (code, prose, figures)"
+keywords:
+  - long-context
+  - llm-serving
+  - rolling-window
+  - memory
+  - context-management
+  - drift-analysis
+  - reproducible-research
+  - llama-cpp
+authors:
+  - family-names: "Hermes research agent"
+    given-names: "Hermes research agent"
+    email: "hermes@local"
+references:
+  - type: article
+    title: "MemGPT: Towards LLMs as operating systems"
+    authors:
+      - family-names: Packer
+        given-names: Charles
+      - family-names: Wooders
+        given-names: Sarah
+      - family-names: Lin
+        given-names: Kevin
+      - family-names: Fang
+        given-names: Vivian
+      - family-names: Patil
+        given-names: Shishir G.
+      - family-names: Stoica
+        given-names: Ion
+      - family-names: Gonzalez
+        given-names: Joseph E.
+    year: 2023
+  - type: article
+    title: "Longformer: The long-document transformer"
+    authors:
+      - family-names: Beltagy
+        given-names: Iz
+      - family-names: Peters
+        given-names: Matthew E.
+      - family-names: Cohan
+        given-names: Arman
+    year: 2020
+  - type: article
+    title: "H2O: Heavy-hitter oracle for efficient generative inference of large language models"
+    authors:
+      - family-names: Zhang
+        given-names: Zhenyu
+    journal: "NeurIPS"
+    year: 2024

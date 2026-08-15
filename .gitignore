@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# LaTeX build artifacts (leak absolute TeX-install paths and are regenerated)
+*.aux
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+
+# Local configuration / environment
+.env
+*.local
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

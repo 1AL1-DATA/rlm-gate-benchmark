@@ -1,0 +1,13 @@
+fact_key,expected,quarter,full_context_correct,full_context_answer,rlm_rolling_correct,rlm_rolling_answer
+codename,AURORA,3,True,AURORA,True,AURORA
+port,8082,3,True,8082,True,8082
+kv_cache,q8,3,True,q8,True,q8
+offload,CPU,2,True,CPU,True,CPU
+context,250K,2,True,250K,False,8GB
+gate,ninety,2,True,ninety,False,90
+memory,RLM,1,True,RLM,False,S3
+rolling,64K,1,False,250K,True,64K
+queue,FIFO,1,True,FIFO,True,FIFO
+budget,8GB,0,True,8GB,True,8GB
+model,QWEN,0,True,QWEN,True,QWEN
+backup,S3,0,True,S3,True,S3

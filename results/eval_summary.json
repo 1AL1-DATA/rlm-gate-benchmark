@@ -1,0 +1,59 @@
+{
+  "window_tokens": 2048,
+  "conversation_tokens": 6012,
+  "num_facts": 12,
+  "tier_recall": {
+    "0.3": 0.333,
+    "0.6": 0.583,
+    "0.9": 0.833
+  },
+  "full_context_accuracy": 0.917,
+  "rlm_rolling_accuracy": 0.833,
+  "accuracy_gap": 0.084,
+  "recent_fact_accuracy": 1.0,
+  "old_fact_accuracy": 0.8,
+  "old_fact_keys": [
+    "budget",
+    "codename",
+    "context",
+    "gate",
+    "kv_cache",
+    "memory",
+    "offload",
+    "port",
+    "queue",
+    "rolling"
+  ],
+  "recent_fact_keys": [
+    "backup",
+    "model"
+  ],
+  "full_context_answers": [
+    "AURORA",
+    "8082",
+    "q8",
+    "CPU",
+    "250K",
+    "ninety",
+    "RLM",
+    "250K",
+    "FIFO",
+    "8GB",
+    "QWEN",
+    "S3"
+  ],
+  "rlm_rolling_answers": [
+    "AURORA",
+    "8082",
+    "QWEN",
+    "CPU",
+    "250K",
+    "ninety",
+    "RLM",
+    "250K",
+    "FIFO",
+    "8GB",
+    "QWEN",
+    "S3"
+  ]
+}

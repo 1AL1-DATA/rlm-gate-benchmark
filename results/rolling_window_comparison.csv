@@ -1,0 +1,6 @@
+mode,window_tokens,wall_seconds,avg_prefill_tps,avg_gen_tps,avg_combined_tps,gate_deposits
+full_context,245760,20242.41,253.13,12.75,12.14,0
+rolling_window_rlm,8192,12976.04,308.3,20.18,18.94,100
+rolling_window_rlm,16384,12258.0,305.84,21.46,20.05,49
+rolling_window_rlm,32768,12148.08,302.11,21.68,20.23,24
+rolling_window_rlm,65536,12465.67,298.63,21.11,19.71,12

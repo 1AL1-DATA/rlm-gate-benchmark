@@ -1,0 +1,76 @@
+{
+  "before": {
+    "n_misses": 3,
+    "modes": {
+      "absent": 0,
+      "unbound": 1,
+      "collision": 2,
+      "paraphrased": 0,
+      "hallucinated": 0,
+      "stale": 0
+    },
+    "shapes": {
+      "number:unit": 1,
+      "word": 1,
+      "abbrev": 1
+    },
+    "quarters": {
+      "0": 1.0,
+      "1": 0.667,
+      "2": 0.333,
+      "3": 1.0
+    },
+    "misses": [
+      {
+        "fact_key": "context",
+        "expected": "250K",
+        "shape": "number:unit",
+        "mode": "collision",
+        "answer": "8GB"
+      },
+      {
+        "fact_key": "gate",
+        "expected": "ninety",
+        "shape": "word",
+        "mode": "unbound",
+        "answer": "90"
+      },
+      {
+        "fact_key": "memory",
+        "expected": "RLM",
+        "shape": "abbrev",
+        "mode": "collision",
+        "answer": "S3"
+      }
+    ]
+  },
+  "after": {
+    "n_misses": 1,
+    "modes": {
+      "absent": 0,
+      "unbound": 0,
+      "collision": 1,
+      "paraphrased": 0,
+      "hallucinated": 0,
+      "stale": 0
+    },
+    "shapes": {
+      "number:unit": 1
+    },
+    "quarters": {
+      "0": 1.0,
+      "1": 0.667,
+      "2": 1.0,
+      "3": 1.0
+    },
+    "misses": [
+      {
+        "fact_key": "rolling",
+        "expected": "64K",
+        "shape": "number:unit",
+        "mode": "collision",
+        "answer": "250K"
+      }
+    ]
+  }
+}

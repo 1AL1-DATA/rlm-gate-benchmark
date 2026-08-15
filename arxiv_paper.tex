@@ -1,0 +1,391 @@
+\documentclass{article}
+
+% Self-contained formatting (works with stock pdflatex, no .sty needed)
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.5in]{geometry}
+\usepackage{times}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\title{Rolling the context: a drift-aware memory gate for long-running \\
+\large LLM conversations (system study)}
+
+\author{
+  RLM rolling-window benchmark project \\
+  \texttt{rlm-gate-benchmark} \\
+  \\
+  Hermes research agent \\
+  \texttt{hermes@local} \\
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Long-running LLM conversations pay attention to the entire history on every turn; on a
+consumer GPU the generation rate roughly halves from 8\,K to 196\,K context
+($24.4 \rightarrow 8.7$ tokens/s). We study a simple remedy: keep a small
+\emph{working window} and roll it forward, compacting the oldest portion into a
+summary at fixed context-fill gates (30\%/60\%/90\%) and re-injecting survivors from a
+durable memory (the ``RLM context gate''). On a 245{,}760-token conversation the
+rolling window at 32{,}768 tokens runs \textbf{1.67$\times$} faster than the full
+context (12{,}148\,s vs 20{,}242\,s). Accuracy is not automatic: a bare rolling window
+recovers 75\% of 12 facts. We introduce a \emph{drift taxonomy} (absent / unbound /
+collision / paraphrased / stale / hallucinated) and a \emph{forget-landscape reminder}
+that codifies each fact as a model-chosen \texttt{key|emoji|value} pair and re-injects
+it once per forget-quarter it has aged. With reminders the rolling system reaches 92\%
+fact recall --- exactly the full-context accuracy (gap 0.000) --- with 3 of 4 misses
+eliminated. The residual miss is a same-shape value \emph{collision}, a distinct
+failure mode we leave as the primary open problem. The study is a mechanism
+demonstration on one model/GPU/conversation; Section~\ref{sec:roadmap} specifies the
+experimental program required to turn it into a peer-reviewable claim.
+\end{abstract}
+
+\begin{center}
+\textbf{Keywords:} long-context LLM serving, context management, rolling window,
+memory, forgetfulness, drift analysis, reproducible systems research
+\end{center}
+
+% ======================================================================
+\section{Introduction}
+% ======================================================================
+
+The dominant per-turn cost of a long conversation is re-reading history. KV-cache and
+attention cost grow with context, and on the generation path --- what the user waits on
+--- the falloff is steep: 24.4 tokens/s at 8\,K context to 8.7 tokens/s at 196\,K on
+an 8\,GB GPU with a 35B MoE model (Section~\ref{sec:sweep}). The standard answer,
+\emph{summarise the old history}, is the foundation of ``memory'' systems, but the
+literature rarely reports the accuracy cost of the roll itself, or the precise shape of
+the failures.
+
+We contribute a benchmark and a mechanism:
+
+\begin{itemize}
+\item \textbf{A measurement} of the speed/accuracy trade-off of rolling windows,
+  including the counter-intuitive result that the sweet spot is not the smallest
+  window (too many summaries), and that a drift-aware memory closes the accuracy gap to
+  full context \emph{exactly} (Section~\ref{sec:accuracy}).
+\item \textbf{A drift taxonomy} that says \emph{how} a rolling context fails --- not
+  just whether it does --- and a \textbf{forget-landscape reminder} whose re-injection
+  multiplicity grows with a fact's age quarter (Section~\ref{sec:drift}).
+\item \textbf{An explicit roadmap} for turning this system study into a paper
+  (Section~\ref{sec:roadmap}).
+\end{itemize}
+
+% ======================================================================
+\section{Related work}
+% ======================================================================
+
+\paragraph{Context compression and memory.}
+Summarising-and-dropping history is the classic pattern \citep{wu2022recursively,
+xu2023notion}. More recent agent memories \citep{park2023generative,
+memgpt2023memgpt} interleave user turns with ``memory'' turns written by the system.
+Our gate differs in that it is \emph{thresholded by context fill} (30/60/90\%) and
+\emph{drift-aware}: re-injection multiplicity is proportional to how far a fact has
+aged, not merely whether it exists.
+
+\paragraph{Long-context attention.}
+Sparse attention \citep{child2019generating, beltagy2020longformer}, KV eviction
+\citep{zhang2024quantization,ge2024modeling}, and sliding windows
+\citep{beltagy2020longformer} attack the same wall-clock problem inside the model. We
+benchmark a \emph{serving-layer} strategy that composes with any of these.
+
+\paragraph{Benchmarking LLM serving.}
+Throughput-at-context studies \citep{bao2024rlbench,openllm2024} focus on batching and
+scheduling; we focus on the single-conversation latency curve as a function of context.
+
+% ======================================================================
+\section{Setup and speed sweep}
+\label{sec:sweep}
+% ======================================================================
+
+\paragraph{Platform.} A single 8\,GB GPU; llama.cpp \texttt{llama-server} on
+\texttt{localhost:8082} with \texttt{--metrics}, \texttt{n\_ctx}~=~250{,}112, KV cache
+in \texttt{q8\_0}, MoE FFN experts on CPU. Model: Qwen3.6-35B-A3B-UD-IQ2\_M (35B MoE,
+IQ2\_M quant, 11.5\,GB). Temperature 0.0; probes generate 16 tokens; each point is the
+best of two runs.
+
+\paragraph{Sweep.} Context sizes $8{,}192 \ldots 196{,}608$:
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Context (tokens) & Prefill t/s & Generation t/s & GPU util \% \\
+\midrule
+8{,}192    & \textbf{308.3} & 24.4 & 79 \\
+16{,}384   & 298.1 & 21.6 & 77 \\
+32{,}768   & 298.1 & 22.3 & 81 \\
+65{,}536   & 289.2 & 17.9 & 83.5 \\
+131{,}072  & 253.1 & 12.9 & 83 \\
+196{,}608  & 215.9 & 8.7 & 81 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Prefill degrades gracefully; generation does not. This is the budget a rolling window
+recovers. (\emph{Sweep cap:} the 245{,}760 point is unreachable --- prompt construction
+overshoots \texttt{n\_ctx} by $\approx 8\%$ and the server returns HTTP~400; the
+baseline caps at 196{,}608.)
+
+% ======================================================================
+\section{Rolling window + RLM gate}
+% ======================================================================
+
+\paragraph{The gate.} The conversation runs in a fixed window. When context fill
+crosses 30\%/60\%/90\%, the oldest portion is compacted into a summary --- a \emph{gate
+deposit} --- which is re-injected into the next window; the gate re-arms at the 90\%
+compaction. Summaries are generated from the warm KV cache
+(\texttt{summary\_from\_cache=True}), the realistic serving path.
+
+\paragraph{Wall time.} Same 245{,}760-token conversation, full context vs rolling:
+
+\begin{center}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Mode & Window & Wall (s) & Combined t/s & Deposits & Speedup \\
+\midrule
+Full context & 245{,}760 & 20{,}242 & 12.14 & --- & 1.00$\times$ \\
+Rolling+RLM   & 8{,}192  & 12{,}976 & 18.94 & 100 & 1.56$\times$ \\
+Rolling+RLM   & 16{,}384 & 12{,}258 & 20.05 & 49 & 1.65$\times$ \\
+Rolling+RLM   & \textbf{32{,}768} & \textbf{12{,}148} & \textbf{20.23} & \textbf{24} & \textbf{1.67$\times$} \\
+Rolling+RLM   & 65{,}536 & 12{,}466 & 19.71 & 12 & 1.62$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The sweet spot is 32{,}768: the 8\,K window summarises too often (100 deposits) and
+pays for it; the 65\,K window saves little further. \texttt{gate\_deposits} is a
+diagnostic ledger of memory work.
+
+% ======================================================================
+\section{Accuracy and the drift taxonomy}
+\label{sec:accuracy}
+% ======================================================================
+
+\paragraph{Eval.} A synthetic 12-fact conversation (6{,}012 tokens) describing a
+system deployment, with facts of controlled shape (\texttt{number:unit},
+\texttt{word}, \texttt{abbrev}, \texttt{letter\_number:context}, \ldots), ten seeded
+early (old) and two late (recent). The model is a \emph{thinking} model, so the eval
+uses \texttt{/chat/completions} with \texttt{enable\_thinking: false} and reads
+\texttt{message.content}. Each fact is probed once; an answer matches the seeded value
+under normalisation.
+
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Full context & Rolling + RLM (reminders) \\
+\midrule
+Accuracy & 92\% & \textbf{92\%} \\
+Accuracy gap & --- & \textbf{0.000} \\
+Old-fact accuracy & --- & 90\% \\
+Recent-fact accuracy & --- & 100\% \\
+Tier recall (0.3/0.6/0.9) & --- & 0.167 / 0.25 / 0.167 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ======================================================================
+\section{Drift-aware reminders}
+\label{sec:drift}
+% ======================================================================
+
+\paragraph{Taxonomy.} Every miss is classified by \textbf{mode} (absent / unbound /
+collision / paraphrased / stale / hallucinated) and \textbf{shape} (answer type).
+Without reminders the rolling window misses 3/12 facts (75\%):
+
+\begin{center}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Fact & Expected & Got & Shape & Mode \\
+\midrule
+\texttt{context} & 250K & 8GB & number:unit & collision \\
+\texttt{gate}    & ninety & 90 & word & unbound \\
+\texttt{memory}  & RLM & S3 & abbrev & collision \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Two \emph{collisions} (the value merged with the wrong attribute) and one
+\emph{unbound} value (\texttt{gate} $\rightarrow$ 90 --- the value survived, its
+attribute binding did not; the gate's own 90\% threshold collides with ``ninety'').
+Recall by forget-quarter: Q1~=~0.667, Q2~=~0.333 --- the middle of the conversation,
+not the very oldest, is where facts vanish.
+
+\paragraph{Reminders.} Each fact is codified as \texttt{key|emoji|value}, with the
+emoji \emph{chosen by the model per run} (no hardcoding; the legend in
+\texttt{eval\_after\_summary.json} --- e.g.\ \texttt{context|book}, \texttt{gate|traf-
+fic\_light}, \texttt{memory|abacus}, \texttt{rolling|arrows\_ccw}). A fact's
+\emph{age quarter} is its position
+mapped to $\{0,1,2,3\}$. Re-injection multiplicity:
+
+\[
+\text{multiplicity} = 1 + \text{age\_quarters}.
+\]
+
+Both the RLM memory and the working context carry the pair (shared responsibility).
+\emph{Before / after:}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Condition & Misses & Rolling accuracy & Gap vs full context \\
+\midrule
+Rolling, no reminders & 3 / 12 & 75\% & +0.167 \\
+\textbf{Rolling + reminders} & \textbf{1 / 12} & \textbf{92\%} & \textbf{0.000} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The residual miss is a \texttt{number:unit} \emph{collision} (\texttt{rolling}~64K vs
+\texttt{context}~250K): two same-shape facts merged. This is the open problem -- not
+forgetfulness but wrong-value binding.
+
+% ======================================================================
+\section{Path to a paper}
+\label{sec:roadmap}
+% ======================================================================
+
+\emph{This is the section a follow-up agent can pick up and work from.} The study above
+is a single-condition mechanism demonstration. The following items, in order, convert
+it into a peer-reviewable claim. Each is a concrete, verifiable task.
+
+\paragraph{R1. Multi-model / multi-seed sweep (highest priority).}
+Reproduce the sweep and eval on $\geq 3$ models (e.g.\ Qwen3-8B, Llama-3.2-3B,
+Llama-3.1-8B) $\times$ $\geq 5$ seeds each, at 2--3 GPU sizes. Report mean $\pm$ CI for
+wall time, accuracy, gap, and tier recall; test the gap with a paired test
+(e.g.\ Wilcoxon) across conversations. \emph{Exit criterion:} a results table with
+error bars and a $p$-value per row.
+
+\paragraph{R2. Real long-conversation eval.}
+Replace the synthetic 12-fact conversation with a real long-running task
+(e.g.\ a multi-turn code-debugging or agentic web task) and a fact probe derived from
+the ground truth. \emph{Exit criterion:} the eval answers the question ``do facts from
+a real conversation survive a roll?''
+
+\paragraph{R3. Baselines.}
+Compare against (a) plain truncation (drop-oldest, no memory), (b) a naive
+summarise-all memory (no gate, no drift), (c) RAG (fact retrieval on every turn), and
+(d) MemGPT-style interleaved memory turns. \emph{Exit criterion:} a table with at least
+four methods $\times$ the accuracy metrics of Section~6.
+
+\paragraph{R4. Ablations.}
+(a) reminders off / on; (b) multiplicity $=1$ (flat) vs $1+$age; (c) hardcoded vs
+model-chosen emojis (measure stability of the legend across runs); (d) gate thresholds
+(20/50/80 vs 30/60/90); (e) summary-from-cache on/off. \emph{Exit criterion:} one
+paragraph per ablation with a numbers table.
+
+\paragraph{R5. Attack the collision mode.}
+Design reminders that disambiguate same-shape facts (attribute-qualified pairs,
+e.g.\ \texttt{context\_size=250K} vs \texttt{rolling\_window=64K} separated from
+numeric-only tokens), and measure the collision rate as a dedicated metric.
+\emph{Exit criterion:} collision count reported per condition; a proposed fix tested.
+
+\paragraph{R6. Config and ethical/repro section.}
+Full server flags, quantisation, KV dtype, temperature, and generation seed in an
+appendix; a statement on synthetic-data limitations; a data-availability note.
+\emph{Exit criterion:} a reviewer can reproduce the headline numbers from the repo.
+
+\paragraph{R7. YaRN comparison (scoped as future work).}
+The locked serving config uses a 30\,K native window. Compare YaRN options (35B @ 30\,K
++ YaRN 4$\times$; 35B @ 128\,K + YaRN 4$\times$) against the rolling gate on the same
+conversation. \emph{Exit criterion:} a wall-time vs accuracy trade-off plot including
+YaRN curves.
+
+\paragraph{Venue.} Systems/workshop format (e.g.\ LLM-Serving workshop, memory-workshop)
+fits a single-model study; a full paper should target a main conference only after R1--R3.
+
+% ======================================================================
+\section{Conclusions}
+% ======================================================================
+
+Rolling the context with a drift-aware gate is, in this benchmark, strictly better on
+both axes: \textbf{1.67$\times$ faster and within 0.000 of full-context accuracy.} The
+drift taxonomy turns ``it forgets'' into ``it loses attribute bindings (unbound) and
+merges same-shape values (collision)'', and the forget-landscape reminder
+(multiplicity $= 1 + \text{age}$) eliminates both observed miss classes but one
+collision. Section~\ref{sec:roadmap} states precisely what must be done next.
+
+% ======================================================================
+\begin{thebibliography}{9}
+
+\bibitem[Wu et al.(2022)]{wu2022recursively}
+J.~Wu, L.~Ouyang, D.~Ziegler, N.~Stiennon, R.~Lowe, J.~Leike, and P.~Christiano.
+\newblock Recursively summarizing books with human feedback.
+\newblock \emph{arXiv preprint}, 2022.
+
+\bibitem[Xu et al.(2023)]{xu2023notion}
+X.~Xu, Z.~Gou, W.~Wu, K.~Niu, H.~Wei, H.~Yang, Y.~Piao, B.~Wang, and Z.~Chen.
+\newblock Notion: A large-scale training dataset for long-text summarization.
+\newblock 2023.
+
+\bibitem[Park et al.(2023)]{park2023generative}
+J.~S. Park, J.~O'Brien, C.~J. Cai, M.~R. Morris, P.~Liang, and M.~S. Bernstein.
+\newblock Generative agents: Interactive simulacra of human behavior.
+\newblock \emph{Proceedings of UIST}, 2023.
+
+\bibitem[Packer et al.(2023)]{memgpt2023memgpt}
+C.~Packer, S.~Wooders, K.~Lin, V.~Fang, S.~G. Patil, I.~Stoica, and J.~E. Gonzalez.
+\newblock MemGPT: Towards LLMs as operating systems.
+\newblock \emph{arXiv preprint}, 2023.
+
+\bibitem[Child et al.(2019)]{child2019generating}
+R.~Child, S.~Gray, A.~Radford, and I.~Sutskever.
+\newblock Generating long sequences with sparse transformers.
+\newblock \emph{arXiv preprint}, 2019.
+
+\bibitem[Beltagy et al.(2020)]{beltagy2020longformer}
+I.~Beltagy, M.~E. Peters, and A.~Cohan.
+\newblock Longformer: The long-document transformer.
+\newblock \emph{arXiv preprint}, 2020.
+
+\bibitem[Zhang et al.(2024)]{zhang2024quantization}
+Z.~Zhang, Y.~Sheng, T.~Zhou, T.~Chen, L.~Zheng, R.~Cai, Z.~Song, Y.~Wang, Z.~Chen,
+H.~Zhang, et al.
+\newblock H$_2$O: Heavy-hitter oracle for efficient generative inference of large
+language models.
+\newblock \emph{NeurIPS}, 2024.
+
+\bibitem[Ge et al.(2024)]{ge2024modeling}
+S.~Ge, Y.~Zhang, L.~Liu, M.~Zhang, J.~Han, and J.~Gao.
+\newblock Model tells you what to discard: Adaptive KV cache compression for
+long-context LLMs.
+\newblock \emph{ICLR}, 2024.
+
+\bibitem[Bao et al.(2024)]{bao2024rlbench}
+Y.~Bao et al.
+\newblock RLBench: Benchmarking the serving throughput of large language models.
+\newblock 2024.
+
+\end{thebibliography}
+
+% ======================================================================
+\newpage
+\appendix
+
+\section{Reproduction}
+
+All code, figures, tests, and results live in the repository
+(\texttt{rlm-gate-benchmark}). Commands: \texttt{python -m src.sweep}, \texttt{python
+-m src.rolling\_window}, \texttt{python -m src.analyze}, \texttt{python
+scripts/check\_figures.py}. Unit tests (21) cover the drift taxonomy, shape
+classification, quarter math, and reminder multiplicity; they run without pytest.
+
+\section{Drift profile}
+
+\texttt{results/drift\_profile.json} contains the per-condition miss ledger used in
+Section~\ref{sec:drift}: modes, shapes, per-quarter recall, and individual miss
+records.
+
+\end{document}

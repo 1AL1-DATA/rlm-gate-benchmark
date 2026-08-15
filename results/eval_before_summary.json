@@ -1,0 +1,61 @@
+{
+  "window_tokens": 2048,
+  "conversation_tokens": 6012,
+  "num_facts": 12,
+  "tier_recall": {
+    "0.3": 0.333,
+    "0.6": 0.583,
+    "0.9": 0.833
+  },
+  "full_context_accuracy": 0.917,
+  "rlm_rolling_accuracy": 0.75,
+  "accuracy_gap": 0.167,
+  "recent_fact_accuracy": 1.0,
+  "old_fact_accuracy": 0.7,
+  "old_fact_keys": [
+    "budget",
+    "codename",
+    "context",
+    "gate",
+    "kv_cache",
+    "memory",
+    "offload",
+    "port",
+    "queue",
+    "rolling"
+  ],
+  "recent_fact_keys": [
+    "backup",
+    "model"
+  ],
+  "full_context_answers": [
+    "AURORA",
+    "8082",
+    "q8",
+    "CPU",
+    "250K",
+    "ninety",
+    "RLM",
+    "250K",
+    "FIFO",
+    "8GB",
+    "QWEN",
+    "S3"
+  ],
+  "rlm_rolling_answers": [
+    "AURORA",
+    "8082",
+    "q8",
+    "CPU",
+    "8GB",
+    "90",
+    "S3",
+    "64K",
+    "FIFO",
+    "8GB",
+    "QWEN",
+    "S3"
+  ],
+  "rlm_context": "*   debug is disabled\n*   skip the changelog\n*   slot 2\n*   temperature stayed flat\n*   no packet loss\n*   AURORA\n\n---\n\n- AURORA\n- 8082\n\n---\n\n- AURORA\n- 8082\n- q8\n\n---\n\n- config loader\n- timer\n- slot 2\n- debug is disabled\n- release notes short\n- skip the changelog for now\n- offload is CPU\n\n---\n\n- CPU\n- 250K\n- ninety\n\n---\n\n- config loader\n- timer\n- slot 2\n- debug\n- changelog\n- CPU\n- 250K\n- ninety\n- RLM\n\n---\n\n- slot 2\n- debug is disabled\n- 64K\n\n---\n\n- slot 2\n- debug is disabled\n- 64K\n- FIFO\n\n---\n\n- slot 2\n- 64K\n- FIFO\n- 8GB\n\n---\n\n* QWEN\n* 2",
+  "legend": {}
+}
