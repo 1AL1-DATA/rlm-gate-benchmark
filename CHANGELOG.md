@@ -22,6 +22,11 @@ All notable changes to this repository are documented here. Format follows
   `research_report.md`, `arxiv_paper.tex` (draft with agent-actionable roadmap
   R1--R7), `AUTHORS`, `LICENSE` (MIT), `CITATION.cff`, `CHANGELOG.md`,
   `CONTRIBUTING.md`.
+- Attribution for the RLM concept: the recursive-language-model / Continual-Harness
+  memory idea is credited to PrimeIntellect's open-source `prime-agent` (MIT) in
+  `README.md` (Acknowledgements), `arxiv_paper.tex` (citation in abstract + related
+  work + bibliography), `CITATION.cff` (reference), `METHODOLOGY.md`, and
+  `linkedin_post.md` (body + first comment).
 
 ## [0.1.0] — 2026-08-15
 

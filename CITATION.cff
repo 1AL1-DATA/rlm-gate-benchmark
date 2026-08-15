@@ -24,6 +24,14 @@ authors:
     given-names: "Hermes research agent"
     email: "hermes@local"
 references:
+  - type: software
+    title: "Prime Agent: a self-improving RLM agent"
+    authors:
+      - name: "PrimeIntellect"
+    year: 2026
+    url: "https://github.com/PrimeIntellect-ai/prime-agent"
+    license:
+      - id: MIT
   - type: article
     title: "MemGPT: Towards LLMs as operating systems"
     authors:

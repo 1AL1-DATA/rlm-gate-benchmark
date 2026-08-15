@@ -145,6 +145,17 @@ figures/             all figures
 - YaRN-based alternatives (longer native window at 4× RoPE, or 128 K + YaRN) are
   **not** benchmarked here; they are scoped as future work (see `arxiv_paper.tex`).
 
+## Acknowledgements
+
+The **RLM** (recursive language model) concept this benchmark builds on — persistent
+IPython as the model's programming surface, prompt-as-a-variable, and the Continual
+Harness for durable memory — originates from **PrimeIntellect's open-source
+[prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)** (MIT, 2026; Continual
+Harness, [arXiv:2605.09998](https://arxiv.org/abs/2605.09998)). This project evaluates a
+rolling-window adaptation of that memory concept; the terms *RLM context gate* and
+*RLM rolling-window benchmark* are used here in that derived sense. We thank the
+prime-agent authors for making the RLM abstraction public.
+
 ## License
 
 MIT — see `LICENSE`.

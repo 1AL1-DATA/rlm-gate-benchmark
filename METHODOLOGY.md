@@ -6,6 +6,12 @@ someone with a similar background could reproduce the work without reading the c
 If you only want to **run** the benchmark, follow the `README.md` "Reproducing"
 section. If you want to **understand** the analysis, read this.
 
+The **RLM** (recursive language model) terminology and the durable-memory concept
+(rolling context forward, re-injecting survivors from a side memory) are derived from
+PrimeIntellect's open-source [prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)
+(MIT, 2026; Continual Harness, [arXiv:2605.09998](https://arxiv.org/abs/2605.09998)).
+This project evaluates a rolling-window adaptation of that concept.
+
 ## Research question
 
 Can a long-running model conversation be kept inside a small working window — rolling

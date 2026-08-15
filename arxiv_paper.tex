@@ -39,7 +39,8 @@ consumer GPU the generation rate roughly halves from 8\,K to 196\,K context
 ($24.4 \rightarrow 8.7$ tokens/s). We study a simple remedy: keep a small
 \emph{working window} and roll it forward, compacting the oldest portion into a
 summary at fixed context-fill gates (30\%/60\%/90\%) and re-injecting survivors from a
-durable memory (the ``RLM context gate''). On a 245{,}760-token conversation the
+durable memory (the ``RLM context gate'' \citep{primeagent2026}). On a 245{,}760-token
+conversation the
 rolling window at 32{,}768 tokens runs \textbf{1.67$\times$} faster than the full
 context (12{,}148\,s vs 20{,}242\,s). Accuracy is not automatic: a bare rolling window
 recovers 75\% of 12 facts. We introduce a \emph{drift taxonomy} (absent / unbound /
@@ -92,9 +93,12 @@ We contribute a benchmark and a mechanism:
 Summarising-and-dropping history is the classic pattern \citep{wu2022recursively,
 xu2023notion}. More recent agent memories \citep{park2023generative,
 memgpt2023memgpt} interleave user turns with ``memory'' turns written by the system.
-Our gate differs in that it is \emph{thresholded by context fill} (30/60/90\%) and
-\emph{drift-aware}: re-injection multiplicity is proportional to how far a fact has
-aged, not merely whether it exists.
+Our gate is a serving-layer adaptation of the \emph{recursive language model} (RLM)
+abstraction \citep{primeagent2026}, which treats context as a variable inside a
+persistent REPL and keeps durable memory state in a continual harness. We differ in
+that our gate is \emph{thresholded by context fill} (30/60/90\%) and \emph{drift-aware}:
+re-injection multiplicity is proportional to how far a fact has aged, not merely whether
+it exists.
 
 \paragraph{Long-context attention.}
 Sparse attention \citep{child2019generating, beltagy2020longformer}, KV eviction
@@ -103,7 +107,7 @@ Sparse attention \citep{child2019generating, beltagy2020longformer}, KV eviction
 benchmark a \emph{serving-layer} strategy that composes with any of these.
 
 \paragraph{Benchmarking LLM serving.}
-Throughput-at-context studies \citep{bao2024rlbench,openllm2024} focus on batching and
+Throughput-at-context studies \citep{bao2024rlbench} focus on batching and
 scheduling; we focus on the single-conversation latency curve as a function of context.
 
 % ======================================================================
@@ -318,7 +322,13 @@ merges same-shape values (collision)'', and the forget-landscape reminder
 collision. Section~\ref{sec:roadmap} states precisely what must be done next.
 
 % ======================================================================
-\begin{thebibliography}{9}
+\begin{thebibliography}{10}
+
+\bibitem[PrimeIntellect(2026)]{primeagent2026}
+PrimeIntellect.
+\newblock Prime agent: A self-improving RLM agent (software, MIT).
+\newblock \emph{https://github.com/PrimeIntellect-ai/prime-agent}; Continual Harness,
+\newblock \emph{arXiv:2605.09998}, 2026.
 
 \bibitem[Wu et al.(2022)]{wu2022recursively}
 J.~Wu, L.~Ouyang, D.~Ziegler, N.~Stiennon, R.~Lowe, J.~Leike, and P.~Christiano.
