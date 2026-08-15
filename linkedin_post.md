@@ -20,15 +20,17 @@ The other honest takeaway: the "gate deposits" tell you when memory is doing wor
 
 Code, figures, and 21 tests are in the first comment. The drift taxonomy (absent / unbound / collision / stale) is the part I'd love to stress-test on a real long-running conversation.
 
-#LLM #ContextWindow #Memory #MachineLearning #ReproducibleResearch
+#LLM #ContextWindow #Memory #MachineLearning #ReproducibleResearch #GenerativeAI #LongContext #InferenceOptimization #LLMOps #AgentArchitecture #AIInfrastructure #PerformanceEngineering #GPUComputing #LLMInference #ConversationalAI
 
 ---
 
 ## Behind-the-scenes notes
 
 - **No external links in the main post body.** Link goes in the FIRST COMMENT.
-- **Hashtags**: 5.
-- **Character count**: ~1,900 characters — well within LinkedIn's 3,000 limit.
+- **Hashtags**: 15, all contextual to the post's themes (rolling context, serving
+  cost, memory, accuracy, reproducibility). Skipping generic filler like #AI or
+  #Technology that don't add topical signal.
+- **Character count**: ~1,950 characters — well within LinkedIn's 3,000 limit.
 - **Tone**: first-person singular hook ("wouldn't leave me alone"), plain-language numbers, precise claims ("exactly equal to the full-context baseline", "75%", "3 down to 1"), and one stated limitation (value collision) rather than overclaiming.
 - **Narrative arc**: question (long conversations are expensive) → measurement (24 → 8.7 t/s) → the fix (rolling + gate) → headline (1.67×, 92% = 92%) → the honest middle (75% without memory) → the mechanism (drift-aware reminders, model-chosen emojis) → the surviving failure (collision) → call to action (stress-test the drift taxonomy).
 
